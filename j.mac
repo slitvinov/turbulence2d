@@ -1,0 +1,64 @@
+load("pdiff")$
+n: 1$
+jfun(p, q):= block([s],
+  s: 0,
+  local(p, q),
+  for i thru 2 * n + 1 do
+  for j thru 2 * n + 1 do
+  for k thru 2 * n + 1 do
+  for l thru 2 * n + 1 do
+  s: s + a[i - 2 * n, j - 2 * n, k - 2 * n, l - 2 * n] * p[i][j] * q[k][l],
+  s)$
+
+pfun(i0, j0):=makelist(makelist(if i = i0 and j = j0 then 1 else 0, 'i, 2 * n + 1), 'j, 2 * n + 1)$
+rot(t):=[[cos(t), -sin(t)], [sin(t), cos(t)]]$
+refx: [[1, 0], [0, -1]]$
+refy: [[-1, 0], [0, 1]]$
+
+apply_sym(p, r):= block([x, y, u, v, q],
+  local(p, q),
+  q: makelist(makelist(0, i, 2 * n + 1), j, 2 * n + 1),
+  r: matrix(r),
+  for i thru 2 * n + 1 do
+  for j thru 2 * n + 1 do (
+    x: i - (n + 1),
+    y: j - (n + 1),
+    [u, v]: r . [x, y],
+    q[u + n + 1][v + n + 1]: p[i][j]),
+  q)$
+
+T: [[refx, -1], [refy, -1], [rot(%pi/2), 1], [rot(%pi), 1], [rot(3*%pi/2), 1]]$
+
+eq: [ ]$
+for ip thru 2 * n + 1 do
+for jp thru 2 * n + 1 do
+for iq thru 2 * n + 1 do
+for jq thru 2 * n + 1 do block([p, q, j, r, sgn],
+  p: pfun(ip, jp),
+  q: pfun(iq, jq),
+  j: jfun(p, q),
+  for pair in T do (
+    [r, sgn]: pair,
+    ps: apply_sym(p, r),
+    qs: apply_sym(q, r),
+    js: sgn* jfun(ps, qs),
+    if j # js then push(j = js, eq)))$
+block([I: makelist(i, i, -n, n), i, j, k, l],
+  vars: create_list(a[i, j, k, l], i, I, j, I, k, I, l, I))$
+notation: [
+a1 = a[1, 0, 0, 1], a2 = a[1, 0, 1, 1], a3 = a[1, 1, 0, 1],
+a4 = a[1, 0, -1, 1], a5 = a[1, 1, -1, 1], a6 = a[1, 1, -1, 0]
+]$
+so: linsolve(append(eq, notation), vars) $
+ta(e):=expand(taylor(e,  'd, 0, 2), 0) $
+block([p, q],
+  local(p, q),
+  p: makelist(makelist(ta('p('i * 'd, 'j * 'd)), 'i, -n, n), 'j, -n, n),
+  q: makelist(makelist(ta('q('i * 'd, 'j * 'd)), 'i, -n, n), 'j, -n, n),
+  J0: ev(jfun(p, q), so, infeval),
+  J0: factor(ta(J0)))$
+block([p: 'p('x, 'y), q: 'q('x, 'y)],
+  Jref: diff(p, 'x) * diff(q, 'y) - diff(p, 'y) * diff(q, 'x),
+  Jref: subst(['x = 0, 'y = 0], Jref))$
+eq0: factor(- J0 / (4 * 'd^2) / Jref ) = 1, expand;
+
