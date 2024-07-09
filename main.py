@@ -42,7 +42,7 @@ def bc(u):
     u[0, :] = u[nx, :]
     u[nx + 2, :] = u[2, :]
 
-def rhs(nx, ny, dx, dy, re, w, s):
+def rhs(w, s):
     aa = 1.0 / (re * dx * dx)
     bb = 1.0 / (re * dy * dy)
     gg = 1.0 / (4.0 * dx * dy)
@@ -72,12 +72,12 @@ def rhs(nx, ny, dx, dy, re, w, s):
     return f
 
 
-nt = 50
+nt = 100
 re = 1e3
 dt = 1e-2
 ns = 10
 freq = int(nt / ns)
-nx = ny = 32
+nx = ny = 64
 lx = 2 * math.pi
 ly = 2 * math.pi
 dx = lx / np.float64(nx)
@@ -122,21 +122,21 @@ bb = 2.0 / 3.0
 for k in range(nt):
     print(k)
     time += dt
-    r = rhs(nx, ny, dx, dy, re, w, s)
+    r = rhs(w, s)
     for i in range(1, nx + 2):
         for j in range(1, ny + 2):
             t[i, j] = w[i, j] + dt * r[i, j]
     bc(t)
     s = fps(-t)
     bc(s)
-    r = rhs(nx, ny, dx, dy, re, t, s)
+    r = rhs(t, s)
     for i in range(1, nx + 2):
         for j in range(1, ny + 2):
             t[i, j] = 0.75 * w[i, j] + 0.25 * t[i, j] + 0.25 * dt * r[i, j]
     bc(t)
     s = fps(-t)
     bc(s)
-    r = rhs(nx, ny, dx, dy, re, t, s)
+    r = rhs(t, s)
     for i in range(1, nx + 2):
         for j in range(1, ny + 2):
             w[i, j] = aa * w[i, j] + bb * t[i, j] + bb * dt * r[i, j]
